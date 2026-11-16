@@ -6,13 +6,18 @@ from tests.integration.session import Session, SessionTest
 class StackRegistersTest(SessionTest):
     def test_k(self):
         out = self.s.lines("k")
-        self.assertTrue(out[0].startswith("Child-SP"))
-        sites = [l.split()[2] for l in out[1:4]]
+        self.assertTrue(out[0].startswith(" # Child-SP"))
+        self.assertEqual([l.split()[0] for l in out[1:4]], ["00", "01", "02"])
+        sites = [l.split()[3] for l in out[1:4]]
         self.assertEqual([s.split("+")[0] for s in sites], ["sample!leaf", "sample!middle", "sample!main"])
 
     def test_kn_kp_kb(self):
         self.assertTrue(self.s.lines("kn")[1].startswith("00 "))
-        self.assertIn("sample!leaf(int v = 0n8)", self.s.ok("kp"))
+        kp = self.s.lines("kp")
+        self.assertTrue(kp[0].startswith(" # Child-SP"))
+        self.assertTrue(kp[1].startswith("00 "))
+        self.assertIn("sample!leaf(int v = 0n8)", kp[1])
+        self.assertTrue(any("sample!main(void)" in l for l in kp))
         self.assertIn("Args to Child", self.s.ok("kb 1"))
         self.assertEqual(len(self.s.lines("kc 2")), 3)
 

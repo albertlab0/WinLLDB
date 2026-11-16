@@ -26,9 +26,9 @@ def frame_site(ctx, frame, params=False):
             delta = pc - fmt.load_addr(sym.GetStartAddress(), target)
             off = "+0x%x" % delta if delta > 0 else ""
         if params:
-            fname += "(%s)" % ", ".join(
+            fname += "(%s)" % (", ".join(
                 "%s %s = %s" % (v.GetType().GetName(), v.GetName(), scalar_value(v, ctx.ptrsize, short=True))
-                for v in frame.GetVariables(True, False, False, True))
+                for v in frame.GetVariables(True, False, False, True)) or "void")
         site = fname + off
     le = frame.GetLineEntry()
     if le.IsValid() and le.GetLine():
@@ -52,11 +52,10 @@ def _stack_args(ctx, frame):
 def backtrace(ctx, thread, flags, limit=None):
     ps = ctx.ptrsize
     w = len(fmt.addr(0, ps))
-    numbered = "n" in flags
     with_args = "b" in flags or "v" in flags
     params = "p" in flags
     only_site = "c" in flags
-    head = " # " if numbered else ""
+    head = " # "
     if only_site:
         ctx.write(head + "Call Site")
     elif with_args:
@@ -70,7 +69,7 @@ def backtrace(ctx, thread, flags, limit=None):
         f = thread.GetFrameAtIndex(i)
         nxt = thread.GetFrameAtIndex(i + 1)
         ret = nxt.GetPC() if nxt.IsValid() else 0
-        num = "%02x " % i if numbered else ""
+        num = "%02x " % i
         site = frame_site(ctx, f, params)
         if only_site:
             ctx.write(num + site)
@@ -88,11 +87,11 @@ def _k(ctx, name, text):
     backtrace(ctx, ctx.thread, flags, limit)
 
 
-for _name, _summary in [("k", "Stack backtrace"), ("kn", "Stack backtrace with frame numbers"),
+# Frame numbers are always shown (as in current WinDbg); the n variants are kept for muscle memory.
+for _name, _summary in [("k", "Stack backtrace"), ("kn", "Same as k"),
                         ("kb", "Stack backtrace with first args"), ("kv", "Same as kb"),
                         ("kp", "Stack backtrace with full parameters"), ("kc", "Call sites only"),
-                        ("kbn", "kb with frame numbers"), ("kpn", "kp with frame numbers"),
-                        ("kvn", "kv with frame numbers")]:
+                        ("kbn", "Same as kb"), ("kpn", "Same as kp"), ("kvn", "Same as kv")]:
     command(_name, "%s [frames]" % _name, _summary, G)(_k)
 
 

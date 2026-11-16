@@ -151,6 +151,8 @@ def scalar_value(v, ptrsize, short=False):
         n = v.GetValueAsUnsigned()
         return "0x%x '%s'" % (n, _char_repr(n))
     if bt == lldb.eBasicTypeBool:
+        if short:
+            return "true" if v.GetValueAsUnsigned() else "false"
         return "%d" % v.GetValueAsUnsigned()
     if bt in (lldb.eBasicTypeFloat, lldb.eBasicTypeDouble, lldb.eBasicTypeLongDouble):
         return v.GetValue() or "?"
